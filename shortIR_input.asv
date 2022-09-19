@@ -1,4 +1,9 @@
 
+%In this code we try out using a measured IR as our input signal x, the
+%systemIR h_0 is the unknown sourcesig q_0 that we want to find. Our
+%estimate of the systemIR, h, is the estimate of our sourcesig, q, that we
+%are updating adaptively
+
 xinput = randn(1e2,1);
 
 IRlength = 100;
@@ -22,10 +27,14 @@ convfactor = 0.01;
 nsteps = length(xinput);
 
 [xinputestimate,errorhistory] = LMS_Ncoeffs(IRtrue,youtput,1e2,convfactor,nsteps);
+totalerrorhistory = errorhistory;
+i = 1000;
 
-while errorhistory > 0
-    [xinputestimate,errorhistory] = LMS_Ncoeffs(IRtrue,youtput,1e2,convfactor,nsteps,);
-
+while i > 0
+    [xinputestimate,errorhistory] = LMS_Ncoeffs(IRtrue,youtput,1e2,convfactor,nsteps,xinputestimate);
+    totalerrorhistory = [totalerrorhistory errorhistory];
+    i = i-1;
+end
 figure(1)
 semilogy(abs(errorhistory))
 grid
