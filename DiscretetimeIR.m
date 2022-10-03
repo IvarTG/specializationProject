@@ -38,7 +38,7 @@ r_ES3 = r_ES(3,:);
 % samplemethod = 2 -> round at high fs and decimate
 % samplemethod = 3 -> round at low fs but split pulse between two samples
 
-samplemethod = 2;
+samplemethod = 1;
 
 % Generate discrete-time IRs
 % Exact arrival times
