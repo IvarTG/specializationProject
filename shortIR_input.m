@@ -1,33 +1,38 @@
 
-xinput = randn(1e2,1);
+%In this code we try out using a measured IR as our input signal x, the
+%systemIR h_0 is the unknown sourcesig q_0 that we want to find. Our
+%estimate of the systemIR, h, is the estimate of our sourcesig, q, that we
+%are updating adaptively
+
+q_0 = randn(1e2,1);
 
 IRlength = 100;
 
-IRtrue = zeros(IRlength,1);
-IRtrue(3) = 1;
-IRtrue(12) = -0.2;
-IRtrue(19) = 0.12;
-IRtrue(30) = 1;
-IRtrue(43) = 1;
-IRtrue(57) = -0.6;
-IRtrue(79) = 0.3;
-IRtrue(92) = -0.1;
+IR = zeros(IRlength,1);
+IR(3) = 1;
+IR(12) = -0.2;
+IR(19) = 0.12;
+IR(30) = 1;
+IR(43) = 1;
+IR(57) = -0.6;
+IR(79) = 0.3;
+IR(92) = -0.1;
 
-youtput = contwo(xinput,IRtrue);
-youtput = youtput(1:length(xinput));
+youtput = contwo(q_0,IR);
+youtput = youtput(1:length(q_0));
 
 youtput = youtput + 0.01*randn(size(youtput));
 
 convfactor = 0.01;
-nsteps = length(xinput);
+nsteps = length(q_0);
 
-[xinputestimate,errorhistory] = LMS_Ncoeffs(IRtrue,youtput,1e2,convfactor,nsteps);
+[q,errorhistory] = LMS_Ncoeffs(IR,youtput,1e2,convfactor,nsteps);
 totalerrorhistory = errorhistory;
 i = 300;
 
 while i > 0
-    [xinputestimate,errorhistory] = LMS_Ncoeffs(IRtrue,youtput,1e2,convfactor,nsteps,xinputestimate);
-    totalerrorhistory = [totalerrorhistory, errorhistory];
+    [q,errorhistory] = LMS_Ncoeffs(IR,youtput,1e2,convfactor,nsteps,q);
+    totalerrorhistory = [totalerrorhistory errorhistory];
     i = i-1;
 end
 figure(1)
@@ -36,7 +41,7 @@ grid
 
 figure(2)
 ivec = [1:IRlength];
-plot(ivec,xinput,ivec,xinputestimate,'*');
+plot(ivec,q_0,ivec,q,'*');
 grid
 
 %[xinputestimate,errorhistory] = LMS_Ncoeffs(IRtrue,youtput,1e2,convfactor,nsteps, xinputestimate);
