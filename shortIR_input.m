@@ -23,11 +23,11 @@ nsteps = length(xinput);
 
 [xinputestimate,errorhistory] = LMS_Ncoeffs(IRtrue,youtput,1e2,convfactor,nsteps);
 totalerrorhistory = errorhistory;
-i = 1000;
+i = 300;
 
 while i > 0
     [xinputestimate,errorhistory] = LMS_Ncoeffs(IRtrue,youtput,1e2,convfactor,nsteps,xinputestimate);
-    totalerrorhistory = [totalerrorhistory errorhistory];
+    totalerrorhistory = [totalerrorhistory, errorhistory];
     i = i-1;
 end
 figure(1)
