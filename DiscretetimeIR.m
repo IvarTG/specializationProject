@@ -3,9 +3,10 @@ r = 2.35; %m
 xc = 0;   %center x
 yc = 0;   %center y
 
-n_meas = 24;
+n_meas = 121;
 
-theta = linspace(0,2*pi-((3*pi)/180),n_meas);
+%theta = linspace(0,2*pi-((3*pi)/180),n_meas); %if n_meas is 120
+theta = linspace(0,2*pi,n_meas);                %if n_meas is 121
 x = r*cos(theta) + xc;
 y = r*sin(theta) + yc;
 

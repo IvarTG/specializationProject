@@ -10,7 +10,7 @@ filenumbers = [0:120];
 nfiles = length(filenumbers);
 numberofsampelstoread = 2000;
 
-reloadfiles = 0;
+reloadfiles = 1;
 
 nfft = 8192;
 %ivfft = 320:1300;
@@ -28,7 +28,7 @@ freqlpfir = 5000;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if reloadfiles == 1
+if reloadfiles == 0
     disp(' ')
     for ii = 1:nfiles
         II = int2str(filenumbers(ii));

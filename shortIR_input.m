@@ -19,7 +19,7 @@ IR(79) = 0.3;
 IR(92) = -0.1;
 
 youtput = contwo(q_0,IR);
-youtput = youtput(1:length(q_0));
+%youtput = youtput(1:length(q_0));
 
 youtput = youtput + 0.01*randn(size(youtput));
 
