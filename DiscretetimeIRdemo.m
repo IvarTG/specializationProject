@@ -82,7 +82,7 @@ ptot = exp(-1i*kvec*r1)/r1 + exp(-1i*kvec*r2)/r2;
 
 if samplemethod == 2
     % Correct scale for IR results
-    ptot_fromIR = ptot_fromIR*(1/r1 + 1/r2)/(sum(ir1)+sum(ir2));
+    %ptot_fromIR = ptot_fromIR*(1/r1 + 1/r2)/(sum(ir1)+sum(ir2));
 end
 
 figure(1)

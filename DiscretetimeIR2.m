@@ -3,7 +3,7 @@ r = 2.35; %m
 xc = 0;   %center x
 yc = 0;   %center y
 
-n_meas = 24;
+n_meas = 120;
 
 theta = linspace(0,2*pi-((3*pi)/180),n_meas);
 x = r*cos(theta) + xc;
@@ -16,7 +16,6 @@ ES2 = [0.3,0,0];
 ES3 = [-0.3,0,0];
 
 ES_xyz = cat(1, ES1, ES2, ES3);
-n_source = 3;
 
 figure(5)
 scatter(x,y)
@@ -33,13 +32,13 @@ r_ES1 = r_ES(1,:);
 r_ES2 = r_ES(2,:);
 r_ES3 = r_ES(3,:);
 
-% Discretization error for impulse responses
+% Demo of discretization error for impulse responses
 
 % samplemethod = 1 -> round at low fs
 % samplemethod = 2 -> round at high fs and decimate
 % samplemethod = 3 -> round at low fs but split pulse between two samples
 
-samplemethod = 2;
+samplemethod = 1;
 
 % Generate discrete-time IRs
 % Exact arrival times
@@ -52,7 +51,7 @@ if samplemethod == 2
     noversamp = 8;
     fs_oversamp = fs*noversamp;
     dt = 1/fs_oversamp;
-elseif samplemethod == 1 % Approach 1: round to nearest discrete time-sample
+elseif samplemethod == 1 
     dt = 1/fs;
 elseif samplemethod == 3 
     dt = 1/fs;
@@ -61,7 +60,7 @@ end
 n_exact = zeros(3, n_meas);
 n_rounded = zeros(3, n_meas);
 
-for i = 1:n_source
+for i = 1:3
     for j = 1:n_meas
         t_ij = r_ES(i,j)/cair;
         n_exact(i,j) = t_ij/dt + 1;
@@ -69,29 +68,22 @@ for i = 1:n_source
     end
 end
 
-irmaxlength = -inf;
-for i = 1:n_source
-    if max(n_rounded(i,:)) > irmaxlength
-        irmaxlength = max(n_rounded(i,:));
-    end
-end
-irmaxlength = irmaxlength+1;
+irmaxlength = max([n_rounded(1,:) n_rounded(2,:) n_rounded(3,:)]) + 1;
 
-%irmaxlength = max([n_rounded(1,:) n_rounded(2,:) n_rounded(3,:)]) + 1;
-ir = zeros(irmaxlength+5000, n_source, n_meas);
+ir = zeros(3, n_meas,irmaxlength+500);
 nfft = 8192;
-F = zeros(nfft,n_source, n_meas);
+F = zeros(3, n_meas,nfft);
 
 if samplemethod == 1
-    for i = 1:n_source
+    for i = 1:3
         for j = 1:n_meas
-            ir(n_rounded(i,j),i,j) = 1/r_ES(i,j);
-            F(:,i,j) = fft(ir(:,i,j),nfft);
+            ir(i,j,n_rounded(i,j)) = 1/r_ES(i,j);
+            F(i,j,:) = fft(ir(i,j,:),nfft);
         end
     end
 elseif samplemethod == 2
-    c = zeros(ceil((irmaxlength+5000)/noversamp), n_source, n_meas);
-    for i = 1:n_source
+    c = zeros(ceil((irmaxlength+500)/noversamp), 3, n_meas);
+    for i = 1:3
         for j = 1:n_meas
             ir(n_rounded(i,j),i,j) = 1/r_ES(i,j);
             w = ir(:,i,j);
@@ -101,13 +93,13 @@ elseif samplemethod == 2
     end
     ir = c;
 elseif samplemethod == 3
-    for i = 1:n_source
+    for i = 1:3
         for j = 1:n_meas
             frac = n_exact(i,j) - floor(n_exact(i,j));
-            ir(floor(n_exact(i,j)),i,j) = 1/r_ES(i,j)*(1-frac);
-            ir(floor(n_exact(i,j))+1,i,j) = 1/r_ES(i,j)*frac;
+            ir(i,j,floor(n_exact(i,j))) = 1/r_ES(i,j)*(1-frac);
+            ir(i,j,floor(n_exact(i,j))+1) = 1/r_ES(i,j)*frac;
             
-            F(:,i,j) = fft(ir(:,i,j),nfft);
+            F(i,j,:) = fft(ir(i,j,:),nfft);
         end
     end
 end
@@ -126,7 +118,7 @@ end
 
 fvec_fft = fs/nfft*[0:nfft/2-1].';
 
-ptot_fromIR = sum(F,[2 3]);
+ptot_fromIR = sum(F,[1 2]);
 ptot_fromIR = ptot_fromIR(1:nfft/2);
 ptot_fromIR = squeeze(ptot_fromIR);
 
@@ -137,7 +129,7 @@ kvec = 2*pi*fvec_fft/cair;
 
 % Correct answer, in freq. domain
 ptot = 0;
-for i = 1:n_source
+for i = 1:3
     for j = 1:n_meas
         ptot = ptot + exp(-1i*kvec*r_ES(i,j))/r_ES(i,j);
     end     
