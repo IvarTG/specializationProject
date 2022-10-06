@@ -229,7 +229,7 @@ youtput = youtput(1:length(ir),:);
 convfactor = 0.01;
 nsteps = length(ir);
 
-[q,errorhistory] = MC_LMS_Ncoeffs(ir,youtput(:,1),n_source,n_meas,1e2,convfactor,nsteps);
+[q,errorhistory] = MC_LMS_Ncoeffs(ir,youtput,n_source,n_meas,1e2,convfactor,nsteps);
 totalerrorhistory = errorhistory;
 
 % i = 300;
