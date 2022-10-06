@@ -17,7 +17,7 @@ ES2 = [0.3,0,0];
 ES3 = [-0.3,0,0];
 
 ES_xyz = cat(1, ES1, ES2, ES3);
-n_source = 3;
+n_source = 1;
 
 figure(5)
 scatter(x,y)
@@ -33,7 +33,7 @@ r_ES = EDcalcdist(ES_xyz, mic_xyz.');
 r_ES1 = r_ES(1,:);
 r_ES2 = r_ES(2,:);
 r_ES3 = r_ES(3,:);
-
+r_ES = r_ES3;
 % Discretization error for impulse responses
 
 % samplemethod = 1 -> round at low fs
@@ -59,8 +59,8 @@ elseif samplemethod == 3
     dt = 1/fs;
 end
 
-n_exact = zeros(3, n_meas);
-n_rounded = zeros(3, n_meas);
+n_exact = zeros(n_source, n_meas);
+n_rounded = zeros(n_source, n_meas);
 
 for i = 1:n_source
     for j = 1:n_meas

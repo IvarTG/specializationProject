@@ -217,36 +217,19 @@ if samplemethod == 2
     %ptot_fromIR = ptot_fromIR*(sum(1./r1))/(sum(ir, 'all'));
 end
 
-%%% We first test with one source %%%
-ir = squeeze(ir);
+%%% We first test with one source and one measurement %%%
+
 %youtput = contwo(q_0,IR);
 %youtput = youtput(1:length(q_0));
 %youtput = youtput + 0.01*randn(size(youtput));
 
-youtput = allirslp;
+youtput = allirs;
 youtput = youtput(1:length(ir),:);
 
 convfactor = 0.01;
 nsteps = length(ir);
 
-[q,errorhistory] = MC_LMS_Ncoeffs(ir,youtput(:,1),n_source,n_meas,1e2,convfactor,nsteps);
-totalerrorhistory = errorhistory;
-
-% i = 300;
-% 
-% while i > 0
-%     [q,errorhistory] = LMS_Ncoeffs(ir(:,1),youtput(:,1),1e2,convfactor,nsteps,q);
-%     %totalerrorhistory = [totalerrorhistory errorhistory];
-%     i = i-1;
-% end
-figure(7)
-semilogy(abs(errorhistory))
-grid
-
-% figure(2)
-% ivec = [1:length(q)];
-% plot(ivec,q_0,ivec,q,'*');
-% grid
+[q,errorhistory] = LMS_Ncoeffs(ir,youtput,1e2,convfactor,nsteps);
 
 % for i = 1:n_source
 %     for j = 1:n_meas
