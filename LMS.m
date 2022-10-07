@@ -100,7 +100,7 @@ r_ES = EDcalcdist(ES_xyz, mic_xyz.');
 r_ES1 = r_ES(1,:);
 r_ES2 = r_ES(2,:);
 r_ES3 = r_ES(3,:);
-r_ES = r_ES1;
+r_ES = r_ES2;
 
 % Discretization error for impulse responses
 
@@ -108,7 +108,7 @@ r_ES = r_ES1;
 % samplemethod = 2 -> round at high fs and decimate
 % samplemethod = 3 -> round at low fs but split pulse between two samples
 
-samplemethod = 2;
+samplemethod = 3;
 
 % Generate discrete-time IRs
 % Exact arrival times
@@ -224,21 +224,22 @@ ir = squeeze(ir);
 %youtput = youtput + 0.01*randn(size(youtput));
 
 youtput = allirslp;
-youtput = youtput(1:length(ir),:);
-
+% youtput = [youtput zeros(length(ir)-length(youtput),121)];
+youtput = cat(1, youtput, zeros(length(ir)-length(youtput),121));
 convfactor = 0.01;
 nsteps = length(ir);
+h_startestimate = zeros(5e3,1);
 
-[q,errorhistory] = MC_LMS_Ncoeffs(ir,youtput,n_source,n_meas,1e2,convfactor,nsteps);
+[q,errorhistory] = MC_LMS_Ncoeffs(ir,youtput,n_source,n_meas,5e3,convfactor,nsteps,h_startestimate);
 totalerrorhistory = errorhistory;
 
-% i = 300;
-% 
-% while i > 0
-%     [q,errorhistory] = LMS_Ncoeffs(ir(:,1),youtput(:,1),1e2,convfactor,nsteps,q);
-%     %totalerrorhistory = [totalerrorhistory errorhistory];
-%     i = i-1;
-% end
+i = 6;
+
+while i > 0
+    [q,errorhistory] = MC_LMS_Ncoeffs(ir,youtput,n_source,n_meas,5e3,convfactor,nsteps,q);
+    %totalerrorhistory = [totalerrorhistory errorhistory];
+    i = i-1;
+end
 figure(7)
 semilogy(abs(errorhistory))
 grid

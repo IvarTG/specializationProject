@@ -34,14 +34,20 @@ else
     h_estimate = h_startestimate;
 end
 
+alpha = zeros(1,n_measurements);
+
 for i = 1:n_measurements
-    alpha = 1/mean(xinput(:,i).^2)*convfactor;
+    alpha(i) = 1/mean(xinput(:,i).^2)*convfactor;
 
-    nsig = length(xinput);
-    errorhistory = zeros(1,nsig);
+end
 
-    for ii =1:n_steps
-        flippedx = xinput(ii:-1:max([1 ii-h_length+1]),i);
+nsig = length(xinput);
+errorhistory = zeros(1,nsig);
+
+for ii =1:n_steps
+    estimate_adj = 0;
+    for jj = 1:n_measurements
+        flippedx = xinput(ii:-1:max([1 ii-h_length+1]),jj);
         lengthflippedx = length(flippedx);
         if lengthflippedx < h_length
             flippedx = [flippedx;zeros(h_length-lengthflippedx,1)];
@@ -50,8 +56,9 @@ for i = 1:n_measurements
         y_hat = sum(flippedx.*h_estimate);
 
         e =  youtput(ii) - y_hat ;
-        errorhistory(ii) = e;
+        errorhistory(ii) = errorhistory(ii) + e;
 
-        h_estimate = h_estimate + alpha*e*flippedx;
+        estimate_adj = estimate_adj + alpha(jj)*e*flippedx;
     end
+    h_estimate = h_estimate + (2/n_measurements)*estimate_adj;
 end
