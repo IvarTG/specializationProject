@@ -1,4 +1,4 @@
-
+clf
 %In this code we try out using a measured IR as our input signal x, the
 %systemIR h_0 is the unknown sourcesig q_0 that we want to find. Our
 %estimate of the systemIR, h, is the estimate of our sourcesig, q, that we
@@ -28,7 +28,7 @@ nsteps = length(q_0);
 
 [q,errorhistory] = LMS_Ncoeffs(IR,youtput,1e2,convfactor,nsteps);
 totalerrorhistory = errorhistory;
-i = 300;
+i = 700;
 
 while i > 0
     [q,errorhistory] = LMS_Ncoeffs(IR,youtput,1e2,convfactor,nsteps,q);

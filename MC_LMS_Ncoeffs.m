@@ -26,7 +26,7 @@ function [h_estimate,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_sources,n_m
 % [h_estimate,errorhistory] = LMS_Ncoeffs(xinput,youtput,h_length,convfactor,nsteps,h_startestimate);
 
 if nargin < 8
-    h_estimate = zeros(h_length,1);
+    h_estimate = zeros(h_length,n_sources);
 else
     if length(h_startestimate) ~= h_length
         error('ERROR: An IRstartestimate must have the length = IRlength')
@@ -38,27 +38,43 @@ alpha = zeros(1,n_measurements);
 
 for i = 1:n_measurements
     alpha(i) = 1/mean(xinput(:,i).^2)*convfactor;
-
 end
 
 nsig = length(xinput);
-errorhistory = zeros(1,nsig);
+errorhistory = zeros(nsig,n_measurements);
 
-for ii =1:n_steps
-    estimate_adj = 0;
-    for jj = 1:n_measurements
-        flippedx = xinput(ii:-1:max([1 ii-h_length+1]),jj);
-        lengthflippedx = length(flippedx);
-        if lengthflippedx < h_length
+
+for ii =290:n_steps
+%     y_hat = zeros(1,n_sources,n_measurements);
+    e = youtput(ii,:);
+    for jj = 1:n_sources
+        for kk = 1:n_measurements
+            flippedx = xinput(ii:-1:max([1 ii-h_length+1]),jj,kk);
+            lengthflippedx = length(flippedx);
+            if lengthflippedx < h_length
             flippedx = [flippedx;zeros(h_length-lengthflippedx,1)];
+            end
+            e(kk) = e(kk) - sum(flippedx.*h_estimate(:,jj));
+            errorhistory(ii,kk) = errorhistory(ii,kk) + e(kk);
         end
-
-        y_hat = sum(flippedx.*h_estimate);
-
-        e =  youtput(ii) - y_hat ;
-        errorhistory(ii) = errorhistory(ii) + e;
-
-        estimate_adj = estimate_adj + alpha(jj)*e*flippedx;
     end
-    h_estimate = h_estimate + (2/n_measurements)*estimate_adj;
+    
+    for ll = 1:n_sources
+        for mm = 1:n_measurements
+            flippedx = xinput(ii:-1:max([1 ii-h_length+1]),ll,mm);
+            lengthflippedx = length(flippedx);
+            if lengthflippedx < h_length
+            flippedx = [flippedx;zeros(h_length-lengthflippedx,1)];
+            end
+            h_estimate(:,ll) = h_estimate(:,ll) + (2/n_measurements)*alpha(mm)*e(mm)*flippedx;
+            %h_estimate(:,ll) = h_estimate(:,ll) + alpha(mm)*e(mm)*flippedx;
+            %plot(h_estimate(:,ll))
+        end
+    end
+    
+    %h_estimate = (2/n_measurements)*h_estimate;
 end
+h_estimate = (2/n_measurements)*h_estimate;
+test = 1;
+test = test+1;
+

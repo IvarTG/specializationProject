@@ -1,4 +1,4 @@
-clf
+
 r = 2.35; %m
 xc = 0;   %center x
 yc = 0;   %center y
@@ -17,7 +17,7 @@ ES2 = [0.3,0,0];
 ES3 = [-0.3,0,0];
 
 ES_xyz = cat(1, ES1, ES2, ES3);
-n_source = 1;
+n_source = 3;
 
 figure(5)
 scatter(x,y)
@@ -33,14 +33,15 @@ r_ES = EDcalcdist(ES_xyz, mic_xyz.');
 r_ES1 = r_ES(1,:);
 r_ES2 = r_ES(2,:);
 r_ES3 = r_ES(3,:);
-r_ES = r_ES3;
+%r_ES = r_ES3;
 % Discretization error for impulse responses
 
 % samplemethod = 1 -> round at low fs
-% samplemethod = 2 -> round at high fs and decimate
+% samplemethod = 2 -> round at high fs and decimate %%What we found to
+% function best
 % samplemethod = 3 -> round at low fs but split pulse between two samples
 
-samplemethod = 1;
+samplemethod = 2;
 
 % Generate discrete-time IRs
 % Exact arrival times
@@ -79,7 +80,7 @@ end
 irmaxlength = irmaxlength+1;
 
 %irmaxlength = max([n_rounded(1,:) n_rounded(2,:) n_rounded(3,:)]) + 1;
-ir = zeros(irmaxlength+5000, n_source, n_meas);
+ir = zeros(irmaxlength+500, n_source, n_meas);
 nfft = 8192;
 F = zeros(nfft,n_source, n_meas);
 
@@ -91,12 +92,15 @@ if samplemethod == 1
         end
     end
 elseif samplemethod == 2
-    c = zeros(ceil((irmaxlength+5000)/noversamp), n_source, n_meas);
+    c = zeros(ceil((irmaxlength+500)/noversamp), n_source, n_meas);
     for i = 1:n_source
         for j = 1:n_meas
-            ir(n_rounded(i,j),i,j) = 1/r_ES(i,j);
+            %ir(n_rounded(i,j),i,j) = 1/r_ES(i,j);
+            frac = n_exact(i,j) - floor(n_exact(i,j));
+            ir(floor(n_exact(i,j)),i,j) = 1/r_ES(i,j)*(1-frac);
+            ir(floor(n_exact(i,j))+1,i,j) = 1/r_ES(i,j)*frac;
             w = ir(:,i,j);
-            c(:,i,j) = noversamp*decimate(w,noversamp);
+            c(:,i,j) = noversamp*decimate(w,noversamp,1000,'fir');
             F(:,i,j) = fft(c(:,i,j),nfft);
         end
     end
@@ -167,12 +171,24 @@ sg14
 
 resultdiff = ptot_fromIR(:) - ptot(:);
 figure(2)
-h = plot(fvec_fft,abs(resultdiff)./abs(ptot),'-');
+h = plot(fvec_fft,abs(resultdiff)./abs(ptot),'-y');
 seth
 grid
 g = ylabel('Rel. error   [-]');
 sg14
+hold on
 
+
+figure(4)
+subplot(3,1,1), plot(ir(:,1,1),'y')
+title('ir(:,1,1)')
+hold on
+subplot(3,1,2), plot(ir(:,2,38),'k')
+title('ir(:,2,38)')
+hold on
+subplot(3,1,3), plot(ir(:,3,79),'k')
+title('ir(:,3,79)')
+hold on
 
 
 

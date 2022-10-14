@@ -1,7 +1,7 @@
 %  Meyermeasurements_analyze.m
 % 
 % Peter Svensson 11 April 2022 & 20 April 2022
-
+clf
 indatafolder = 'Meyer4XPmeasurements_data/';
 filenamestart = 'Meyer';
 filenameend = '_S01_R01.etx';
@@ -84,7 +84,7 @@ ES2 = [0.3,0,0];
 ES3 = [-0.3,0,0];
 
 ES_xyz = cat(1, ES1, ES2, ES3);
-n_source = 1;
+n_source = 3;
 
 figure(2)
 scatter(x,y)
@@ -100,7 +100,7 @@ r_ES = EDcalcdist(ES_xyz, mic_xyz.');
 r_ES1 = r_ES(1,:);
 r_ES2 = r_ES(2,:);
 r_ES3 = r_ES(3,:);
-r_ES = r_ES2;
+%r_ES = r_ES3;
 
 % Discretization error for impulse responses
 
@@ -108,7 +108,7 @@ r_ES = r_ES2;
 % samplemethod = 2 -> round at high fs and decimate
 % samplemethod = 3 -> round at low fs but split pulse between two samples
 
-samplemethod = 3;
+samplemethod = 2;
 
 % Generate discrete-time IRs
 % Exact arrival times
@@ -147,7 +147,7 @@ end
 irmaxlength = irmaxlength+1;
 
 %irmaxlength = max([n_rounded(1,:) n_rounded(2,:) n_rounded(3,:)]) + 1;
-ir = zeros(irmaxlength+5000, n_source, n_meas);
+ir = zeros(irmaxlength+500, n_source, n_meas);
 nfft = 8192;
 F = zeros(nfft,n_source, n_meas);
 
@@ -159,12 +159,14 @@ if samplemethod == 1
         end
     end
 elseif samplemethod == 2
-    c = zeros(ceil((irmaxlength+5000)/noversamp), n_source, n_meas);
+    c = zeros(ceil((irmaxlength+500)/noversamp), n_source, n_meas);
     for i = 1:n_source
         for j = 1:n_meas
-            ir(n_rounded(i,j),i,j) = 1/r_ES(i,j);
+            frac = n_exact(i,j) - floor(n_exact(i,j));
+            ir(floor(n_exact(i,j)),i,j) = 1/r_ES(i,j)*(1-frac);
+            ir(floor(n_exact(i,j))+1,i,j) = 1/r_ES(i,j)*frac;
             w = ir(:,i,j);
-            c(:,i,j) = noversamp*decimate(w,noversamp);
+            c(:,i,j) = noversamp*decimate(w,noversamp,1000,'fir');
             F(:,i,j) = fft(c(:,i,j),nfft);
         end
     end
@@ -218,25 +220,28 @@ if samplemethod == 2
 end
 
 %%% We first test with one source %%%
-ir = squeeze(ir);
+
+%ir = squeeze(ir);
 %youtput = contwo(q_0,IR);
 %youtput = youtput(1:length(q_0));
 %youtput = youtput + 0.01*randn(size(youtput));
 
 youtput = allirslp;
+youtput = youtput(1:length(ir),:,:);
 % youtput = [youtput zeros(length(ir)-length(youtput),121)];
 youtput = cat(1, youtput, zeros(length(ir)-length(youtput),121));
+
 convfactor = 0.01;
 nsteps = length(ir);
-h_startestimate = zeros(5e3,1);
+h_startestimate = zeros(3e2,n_source);
 
-[q,errorhistory] = MC_LMS_Ncoeffs(ir,youtput,n_source,n_meas,5e3,convfactor,nsteps,h_startestimate);
+[q,errorhistory] = MC_LMS_Ncoeffs(ir,youtput,n_source,n_meas,5e2,convfactor,nsteps);
 totalerrorhistory = errorhistory;
 
-i = 6;
+i = 110;
 
 while i > 0
-    [q,errorhistory] = MC_LMS_Ncoeffs(ir,youtput,n_source,n_meas,5e3,convfactor,nsteps,q);
+    [q,errorhistory] = MC_LMS_Ncoeffs(ir,youtput,n_source,n_meas,5e2,convfactor,nsteps,q);
     %totalerrorhistory = [totalerrorhistory errorhistory];
     i = i-1;
 end
@@ -244,13 +249,17 @@ figure(7)
 semilogy(abs(errorhistory))
 grid
 
-% figure(2)
-% ivec = [1:length(q)];
+ figure(8)
+ ivec = [1:length(q)];
 % plot(ivec,q_0,ivec,q,'*');
-% grid
+ plot(ivec,q(:,1),'*',ivec,q(:,2),'-o',ivec,q(:,3),'-r');
+ %plot(ivec,q,'*')
+ grid
 
-% for i = 1:n_source
-%     for j = 1:n_meas
-%         [q,errorhistory] = LMS_Ncoeffs(ir,youtput,1e2,convfactor,nsteps);
-%     end
-% end
+y_est = contwo(q, ir);
+y_est = zeros(length(y_est), n_meas);
+for i = 1:n_meas
+    for j = 1:n_source
+        y_est(:,i) = y_est(:,i) + contwo(q(:,j), ir(:,j,i));
+    end
+end
