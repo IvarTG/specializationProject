@@ -1,4 +1,4 @@
-function [h_estimate,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_sources,n_measurements,h_length,convfactor,n_steps,h_startestimate)
+function [h_estimate,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_source,n_meas,h_length,convfactor,n_steps,h_startestimate)
 % LMS_Ncoeffs estimates an IR from an input signal and an output signal using
 % the iterative LMS to find the IR estimate. The input signal must be a
 % noise sequence, possibly band-pass filtered.
@@ -26,7 +26,7 @@ function [h_estimate,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_sources,n_m
 % [h_estimate,errorhistory] = LMS_Ncoeffs(xinput,youtput,h_length,convfactor,nsteps,h_startestimate);
 
 if nargin < 8
-    h_estimate = zeros(h_length,n_sources);
+    h_estimate = zeros(h_length,n_source);
 else
     if length(h_startestimate) ~= h_length
         error('ERROR: An IRstartestimate must have the length = IRlength')
@@ -34,14 +34,14 @@ else
     h_estimate = h_startestimate;
 end
 
-alpha = zeros(1,n_measurements);
+alpha = zeros(1,n_meas);
 
-for i = 1:n_measurements
+for i = 1:n_meas
     alpha(i) = 1/mean(xinput(:,i).^2)*convfactor;
 end
 
 nsig = length(xinput);
-errorhistory = zeros(nsig,n_measurements);
+errorhistory = zeros(nsig,n_meas);
 
 
 for ii =290:n_steps
@@ -50,42 +50,28 @@ for ii =290:n_steps
     y_est = 0;
     %e = zeros(1, n_measurements);
     e = youtput(ii,:);
-    for jj = 1:n_sources
-        for kk = 1:n_measurements
+    for jj = 1:n_source
+        for kk = 1:n_meas
             flippedx = xinput(ii:-1:max([1 ii-h_length+1]),jj,kk);
             lengthflippedx = length(flippedx);
             if lengthflippedx < h_length
               flippedx = [flippedx;zeros(h_length-lengthflippedx,1)];
             end
             y_est = sum(flippedx.*h_estimate(:,jj));
-            e(kk) = e(kk) - y_est;
+            e(:,kk) = e(:,kk) - y_est;
             errorhistory(ii,kk) = errorhistory(ii,kk) + e(kk);
         end
     end
-%     y_real = youtput(ii,:);
-%     y_est = 0;
-%     e = zeros(1, n_measurements);
-%     for kk = 1:n_measurements
-%         for jj = 1:n_sources
-%             flippedx = xinput(ii:-1:max([1 ii-h_length+1]),jj,kk);
-%             lengthflippedx = length(flippedx);
-%             if lengthflippedx < h_length
-%                 flippedx = [flippedx;zeros(h_length-lengthflippedx,1)];
-%             end
-%             
-%             y_est = y_est + sum(flippedx.*h_estimate(:,jj));
-%         end
-%         e(kk) = y_real(kk) - y_est;
-%     end
+
     
-    for ll = 1:n_sources
-        for mm = 1:n_measurements
+    for ll = 1:n_source
+        for mm = 1:n_meas
             flippedx = xinput(ii:-1:max([1 ii-h_length+1]),ll,mm);
             lengthflippedx = length(flippedx);
             if lengthflippedx < h_length
             flippedx = [flippedx;zeros(h_length-lengthflippedx,1)];
             end
-            h_estimate(:,ll) = h_estimate(:,ll) + (2/n_measurements)*alpha(mm)*e(mm)*flippedx;
+            h_estimate(:,ll) = h_estimate(:,ll) + (2/n_meas)*alpha(mm)*e(mm)*flippedx;
             %h_estimate(:,ll) = h_estimate(:,ll) + alpha(mm)*e(mm)*flippedx;
             %plot(h_estimate(:,ll))
         end
@@ -93,7 +79,7 @@ for ii =290:n_steps
     
     %h_estimate = (2/n_measurements)*h_estimate;
 end
-h_estimate = (2/n_measurements)*h_estimate;
+h_estimate = (2/n_meas)*h_estimate;
 test = 1;
 test = test+1;
 

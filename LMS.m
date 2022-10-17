@@ -10,7 +10,7 @@ filenumbers = [0:120];
 nfiles = length(filenumbers);
 numberofsampelstoread = 2000;
 
-reloadfiles =0;
+reloadfiles =1;
 
 nfft = 8192;
 %ivfft = 320:1300;
@@ -227,21 +227,23 @@ end
 %youtput = youtput + 0.01*randn(size(youtput));
 
 youtput = allirslp;
-youtput = youtput(1:length(ir),:,:);
+%youtput = youtput(1:length(ir),:,:);
 % youtput = [youtput zeros(length(ir)-length(youtput),121)];
-youtput = cat(1, youtput, zeros(length(ir)-length(youtput),121));
+%youtput = cat(1, youtput, zeros(length(ir)-length(youtput),121));
 
 convfactor = 0.01;
-nsteps = length(ir);
-h_startestimate = zeros(3e2,n_source);
+xinput = ir;
+n_steps = length(xinput);
+h_length = 3e2;
+h_startestimate = zeros(h_length,n_source);
 
-[q,errorhistory] = MC_LMS_Ncoeffs(ir,youtput,n_source,n_meas,5e2,convfactor,nsteps);
+[q,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_source,n_meas,h_length,convfactor,n_steps);
 totalerrorhistory = errorhistory;
 
-i = 10;
+i = 500;
 
 while i > 0
-    [q,errorhistory] = MC_LMS_Ncoeffs(ir,youtput,n_source,n_meas,5e2,convfactor,nsteps,q);
+    [q,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_source,n_meas,h_length,convfactor,n_steps,q);
     %totalerrorhistory = [totalerrorhistory errorhistory];
     i = i-1;
 end
@@ -249,17 +251,32 @@ figure(7)
 semilogy(abs(errorhistory))
 grid
 
- figure(8)
- ivec = [1:length(q)];
-% plot(ivec,q_0,ivec,q,'*');
- plot(ivec,q(:,1),'*',ivec,q(:,2),'-o',ivec,q(:,3),'-r');
- %plot(ivec,q,'*')
- grid
+%  figure(8)
+%  ivec = [1:length(q)];
+%  plot(ivec,q_0,ivec,q,'*');
+%  %plot(ivec,q(:,1),'*',ivec,q(:,2),'-o',ivec,q(:,3),'-r');
+%  %plot(ivec,q,'*')
+%  grid
 
-y_est_len = contwo(q, ir);
-y_est = zeros(length(y_est_len), n_meas);
+y_est_2_len = contwo(q, ir);
+y_est_2 = zeros(length(y_est_2_len), n_meas);
 for i = 1:n_meas
     for j = 1:n_source
-        y_est(:,i) = y_est(:,i) + contwo(q(:,j), ir(:,j,i));
+        y_est_2(:,i) = y_est_2(:,i) + contwo(q(:,j), ir(:,j,i));
+    end
+end
+
+y_est = zeros(length(youtput), n_meas);
+for ii =290:n_steps
+    for jj = 1:n_source
+        for kk = 1:n_meas
+            flippedx = ir(ii:-1:max([1 ii-h_length+1]),jj,kk);
+            lengthflippedx = length(flippedx);
+            if lengthflippedx < h_length
+              flippedx = [flippedx;zeros(h_length-lengthflippedx,1)];
+            end
+            y_est(ii,kk) = y_est(ii,kk) + sum(flippedx.*q(:,jj));
+            
+        end
     end
 end
