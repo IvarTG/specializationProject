@@ -10,7 +10,7 @@ filenumbers = [0:120];
 nfiles = length(filenumbers);
 numberofsampelstoread = 2000;
 
-reloadfiles =1;
+reloadfiles =0;
 
 nfft = 8192;
 %ivfft = 320:1300;
@@ -238,7 +238,7 @@ h_startestimate = zeros(3e2,n_source);
 [q,errorhistory] = MC_LMS_Ncoeffs(ir,youtput,n_source,n_meas,5e2,convfactor,nsteps);
 totalerrorhistory = errorhistory;
 
-i = 110;
+i = 10;
 
 while i > 0
     [q,errorhistory] = MC_LMS_Ncoeffs(ir,youtput,n_source,n_meas,5e2,convfactor,nsteps,q);
@@ -256,8 +256,8 @@ grid
  %plot(ivec,q,'*')
  grid
 
-y_est = contwo(q, ir);
-y_est = zeros(length(y_est), n_meas);
+y_est_len = contwo(q, ir);
+y_est = zeros(length(y_est_len), n_meas);
 for i = 1:n_meas
     for j = 1:n_source
         y_est(:,i) = y_est(:,i) + contwo(q(:,j), ir(:,j,i));

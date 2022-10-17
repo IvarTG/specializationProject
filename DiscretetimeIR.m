@@ -180,13 +180,13 @@ hold on
 
 
 figure(4)
-subplot(3,1,1), plot(ir(:,1,1),'y')
+subplot(3,1,1), plot(ir(:,1,1),'k')
 title('ir(:,1,1)')
 hold on
-subplot(3,1,2), plot(ir(:,2,38),'k')
+subplot(3,1,2), plot(ir(:,2,0),'k')
 title('ir(:,2,38)')
 hold on
-subplot(3,1,3), plot(ir(:,3,79),'k')
+subplot(3,1,3), plot(ir(:,3,180),'k')
 title('ir(:,3,79)')
 hold on
 
