@@ -44,10 +44,8 @@ nsig = length(xinput);
 errorhistory = zeros(nsig,n_meas);
 
 
-for ii =290:n_steps
+for ii =1:n_steps
 %     y_hat = zeros(1,n_sources,n_measurements);
-    y_real = youtput(ii,:);
-    y_est = 0;
     %e = zeros(1, n_measurements);
     e = youtput(ii,:);
     for jj = 1:n_source
@@ -59,7 +57,6 @@ for ii =290:n_steps
             end
             y_est = sum(flippedx.*h_estimate(:,jj));
             e(:,kk) = e(:,kk) - y_est;
-            errorhistory(ii,kk) = errorhistory(ii,kk) + e(kk);
         end
     end
 
@@ -74,6 +71,7 @@ for ii =290:n_steps
             h_estimate(:,ll) = h_estimate(:,ll) + (2/n_meas)*alpha(mm)*e(mm)*flippedx;
             %h_estimate(:,ll) = h_estimate(:,ll) + alpha(mm)*e(mm)*flippedx;
             %plot(h_estimate(:,ll))
+            errorhistory(ii,mm) = errorhistory(ii,mm) + e(mm);
         end
     end
     

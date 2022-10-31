@@ -1,76 +1,17 @@
-%  Meyermeasurements_analyze.m
-% 
-% Peter Svensson 11 April 2022 & 20 April 2022
-clf
-indatafolder = 'Meyer4XPmeasurements_data/';
-filenamestart = 'Meyer';
-filenameend = '_S01_R01.etx';
+close all
+% Simulated Input q_sim
+q_sim = zeros(1e2,1);
+q_sim(20) = 1;
+%q_sim = randn(1e2,1);
+%q_sim = 1;
 
-filenumbers = [0:120];
-nfiles = length(filenumbers);
-numberofsampelstoread = 2000;
-
-reloadfiles =0;
-
-nfft = 8192;
-%ivfft = 320:1300;
-ivfft = 320 + [0:479];  % 480 samples = 10 ms
-ivfft = 320 + [0:239];  % 240 samples = 5 ms
-
-plotalsosim = 0;
-
-ivplot = 301:500;
-shiftamplp = 0.2;
-shiftamp = 0.5;
-
-nfirlp = 101;
-freqlpfir = 5000;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-if reloadfiles == 0
-    disp(' ')
-    for ii = 1:nfiles
-        II = int2str(filenumbers(ii));
-        if round(ii/10)*10 == ii
-            disp(['   Loading file: ',II])
-        end
-        if filenumbers(ii) < 10
-            II = ['00',II];
-        elseif filenumbers(ii) < 100
-            II = ['0',II];
-        end
-        filename = [indatafolder,filenamestart,II,filenameend];
-        [ir,fs] = readetxfile(filename,numberofsampelstoread);
-    
-        if ii == 1
-            allirs = zeros(length(ir),nfiles);
-            allirslp = zeros(length(ir),nfiles);
-            Blp = fir1(nfirlp,freqlpfir/(fs/2));
-        end
-        allirs(:,ii) = -ir;
-        irf = contwo(-ir,Blp);
-        irf = irf(floor(nfirlp/2):end);
-        irf = irf(1:length(ir));
-        allirslp(:,ii) = irf;
-
-    %     figure(1)
-    %     clf(1)
-    %     plot(ir)
-    %     grid
-    %     pause
-    
-    end
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Discrete IR Code
 %clf
 r = 2.35; %m
 xc = 0;   %center x
 yc = 0;   %center y
 
-n_meas = 121;
+n_meas = 1;
 
 %theta = linspace(0,2*pi-((3*pi)/180),n_meas); %if n_meas is 120
 theta = linspace(0,2*pi,n_meas);                %if n_meas is 121
@@ -84,7 +25,7 @@ ES2 = [-0.32,0,0];
 ES3 = [-0.3,0,0];
 
 ES_xyz = cat(1, ES1, ES2, ES3);
-n_source = 3;
+n_source = 1;
 
 figure(2)
 scatter(x,y)
@@ -100,7 +41,7 @@ r_ES = EDcalcdist(ES_xyz, mic_xyz.');
 r_ES1 = r_ES(1,:);
 r_ES2 = r_ES(2,:);
 r_ES3 = r_ES(3,:);
-%r_ES = r_ES3;
+r_ES = r_ES3;
 
 % Discretization error for impulse responses
 
@@ -183,18 +124,6 @@ elseif samplemethod == 3
     end
 end
 
-% if samplemethod == 2
-%     ir = noversamp*decimate(ir,noversamp);
-%     ir = reshape(ir,[],3,n_meas);
-% %                 c = noversamp*decimate(squeeze(ir(i,j,:)),noversamp);
-% %                 c = reshape(c,1,1,[]);
-% %                 ir(i,j,:) = c;
-% end
-
-% figure(3)
-% plot(ir(1,1))
-% pause
-
 fvec_fft = fs/nfft*[0:nfft/2-1].';
 
 ptot_fromIR = sum(F,[2 3]);
@@ -213,70 +142,88 @@ for i = 1:n_source
         ptot = ptot + exp(-1i*kvec*r_ES(i,j))/r_ES(i,j);
     end     
 end
+
 if samplemethod == 2
     % Correct scale for IR results
     %ptot_fromIR = ptot_fromIR*(1/r1 + 1/r2)/(sum(ir1)+sum(ir2));
     %ptot_fromIR = ptot_fromIR*(sum(1./r1))/(sum(ir, 'all'));
 end
 
-%ir = squeeze(ir);
-%youtput = contwo(q_0,IR);
-%youtput = youtput(1:length(q_0));
-%youtput = youtput + 0.01*randn(size(youtput));
-
-youtput = allirslp;
-%youtput = youtput(1:length(ir),:,:);
-% youtput = [youtput zeros(length(ir)-length(youtput),121)];
-%youtput = cat(1, youtput, zeros(length(ir)-length(youtput),121));
-
-convfactor = 0.01;
-xinput = ir;
-n_steps = length(xinput);
-h_length = 6e2;
-h_startestimate = zeros(h_length,n_source);
-
-[q,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_source,n_meas,h_length,convfactor,n_steps);
-totalerrorhistory = errorhistory(end,:);
-
-i = 15;
-
-while i > 0
-    [q,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_source,n_meas,h_length,convfactor,n_steps,q);
-    totalerrorhistory = [totalerrorhistory; errorhistory(end,:)];
-    i = i-1;
-end
-figure(7)
-semilogy(abs(totalerrorhistory))
-grid
-
-%  figure(8)
-%  ivec = [1:length(q)];
-%  plot(ivec,q_0,ivec,q,'*');
-%  %plot(ivec,q(:,1),'*',ivec,q(:,2),'-o',ivec,q(:,3),'-r');
-%  %plot(ivec,q,'*')
-%  grid
-
-y_est_2_len = contwo(q, ir);
-y_est_2 = zeros(length(y_est_2_len), n_meas);
-for i = 1:n_meas
-    for j = 1:n_source
-        y_est_2(:,i) = y_est_2(:,i) + contwo(q(:,j), ir(:,j,i));
-    end
-end
-
-n_steps = length(q);
+%Simulated Output y_sim
+n_steps = length(q_sim);
+y_sim_1 = zeros(n_steps,n_meas);
 h_length = length(ir);
 
-y_est = zeros(length(youtput), n_meas);
-for ii =1:n_steps
+for ii =1:length(q_sim)
     for jj = 1:n_source
         for kk = 1:n_meas
-            flippedx = q(ii:-1:max([1 ii-h_length+1]),jj);
+            flippedx = q_sim(ii:-1:max([1 ii-h_length+1]),jj,kk);
             lengthflippedx = length(flippedx);
             if lengthflippedx < h_length
               flippedx = [flippedx;zeros(h_length-lengthflippedx,1)];
             end
-            y_est(ii,kk) = y_est(ii,kk) + sum(flippedx.*ir(:,jj,kk));
+            y_sim_1(ii,kk) = y_sim_1(ii,kk) + sum(flippedx.*ir(:,jj,kk));
+            
+        end
+    end
+end
+
+y_sim_2_len = contwo(q_sim, ir);
+y_sim_2 = zeros(length(y_sim_2_len), n_meas);
+
+for i = 1:n_meas
+    for j = 1:n_source
+        y_sim_2(:,i) = y_sim_2(:,i) + sum(contwo(q_sim(:,j), ir(:,j,i)));
+    end
+end
+
+xinput = ir;
+n_steps = length(xinput);
+h_length = 2e2;
+h_startestimate = zeros(h_length,n_source);
+youtput = y_sim_1;
+convfactor = 0.01;
+
+[q_est,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_source,n_meas,h_length,convfactor,n_steps);
+totalerrorhistory = errorhistory(end,:);
+
+% i = 100;
+% 
+% while i > 0
+%     [q_est,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_source,n_meas,h_length,convfactor,n_steps,q_est);
+%     totalerrorhistory = [totalerrorhistory; errorhistory(end,:)];
+%     i = i-1;
+% end
+figure(7)
+semilogy(abs(totalerrorhistory))
+title('errorhist')
+grid
+
+ figure(8)
+ plot(q_sim,'k');
+ title('q_sim vs. q_est')
+ hold on
+ grid
+ plot(q_est,'-*')
+
+y_est_2_len = contwo(q_est, ir);
+y_est_2 = zeros(length(y_est_2_len), n_meas);
+for i = 1:n_meas
+    for j = 1:n_source
+        y_est_2(:,i) = y_est_2(:,i) + contwo(q_est(:,j), ir(:,j,i));
+    end
+end
+
+y_est_1 = zeros(length(youtput), n_meas);
+for ii =1:n_steps
+    for jj = 1:n_source
+        for kk = 1:n_meas
+            flippedx = ir(ii:-1:max([1 ii-h_length+1]),jj,kk);
+            lengthflippedx = length(flippedx);
+            if lengthflippedx < h_length
+              flippedx = [flippedx;zeros(h_length-lengthflippedx,1)];
+            end
+            y_est_1(ii,kk) = y_est_1(ii,kk) + sum(flippedx.*q_est(:,jj));
             
         end
     end
@@ -285,13 +232,14 @@ nfft = 4096;
 fvec = fs/nfft*[0:nfft/2-1];
 froutput = fft(youtput(:,1),nfft); 
 froutput = froutput(1:nfft/2);
-frest = fft(y_est(:,1),nfft); 
+frest = fft(y_est_1(:,1),nfft); 
 frest = frest(1:nfft/2);
 
 figure(11)
-plot(lowpass(y_est(:,1)*21,7000,48000))
+plot(lowpass(y_est_1(:,1),7000,48000))
 xlim([200 800])
 hold on
+title('y_est_lp')
 plot(youtput(:,1),'-r')
 
 figure(15)
@@ -299,8 +247,10 @@ semilogx(fvec,20*log10(abs([froutput frest])))
 grid
 
 figure(12)
-plot(lowpass(y_est*21,7000,48000)+0.2*[0:120])
+plot(y_est_1)
+title('y_est')
 xlim([200 600])
 figure(13)
-plot(youtput + 0.2*[0:120])
+plot(y_sim_1)
+title('y_Real')
 xlim([200 600])
