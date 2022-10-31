@@ -77,7 +77,7 @@ for ii =1:n_steps
     
     %h_estimate = (2/n_measurements)*h_estimate;
 end
-h_estimate = (2/n_meas)*h_estimate;
+% h_estimate = (2/n_meas)*h_estimate;
 test = 1;
 test = test+1;
 

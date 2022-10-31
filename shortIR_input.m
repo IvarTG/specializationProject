@@ -6,7 +6,7 @@ clf
 
 q_0 = randn(1e2,1);
 
-IRlength = 100;
+IRlength = 99;
 
 IR = zeros(IRlength,1);
 IR(3) = 1;
