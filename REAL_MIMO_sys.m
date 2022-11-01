@@ -1,6 +1,60 @@
 clf
 close all
-clear
+%clear
+
+indatafolder = 'Meyer4XPmeasurements_data/';
+filenamestart = 'Meyer';
+filenameend = '_S01_R01.etx';
+
+filenumbers = [0:120];
+nfiles = length(filenumbers);
+numberofsampelstoread = 2000;
+
+reloadfiles =1;
+
+nfft = 8192;
+%ivfft = 320:1300;
+ivfft = 320 + [0:479];  % 480 samples = 10 ms
+ivfft = 320 + [0:239];  % 240 samples = 5 ms
+
+plotalsosim = 0;
+
+ivplot = 301:500;
+shiftamplp = 0.2;
+shiftamp = 0.5;
+
+nfirlp = 101;
+freqlpfir = 5000;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+if reloadfiles == 0
+    disp(' ')
+    for ii = 1:nfiles
+        II = int2str(filenumbers(ii));
+        if round(ii/10)*10 == ii
+            disp(['   Loading file: ',II])
+        end
+        if filenumbers(ii) < 10
+            II = ['00',II];
+        elseif filenumbers(ii) < 100
+            II = ['0',II];
+        end
+        filename = [indatafolder,filenamestart,II,filenameend];
+        [ir,fs] = readetxfile(filename,numberofsampelstoread);
+    
+        if ii == 1
+            allirs = zeros(length(ir),nfiles);
+            allirslp = zeros(length(ir),nfiles);
+            Blp = fir1(nfirlp,freqlpfir/(fs/2));
+        end
+        allirs(:,ii) = -ir;
+        irf = contwo(-ir,Blp);
+        irf = irf(floor(nfirlp/2):end);
+        irf = irf(1:length(ir));
+        allirslp(:,ii) = irf;
+    end
+end
 
 %Discrete IR Code
 %clf
@@ -8,7 +62,7 @@ r = 2.35; %m
 xc = 0;   %center x
 yc = 0;   %center y
 
-n_meas = 24;
+n_meas = 120;
 
 theta = linspace(0,2*pi-((3*pi)/180),n_meas); %if n_meas is 120
 %theta = linspace(0,2*pi,n_meas);                %if n_meas is 121
@@ -19,7 +73,7 @@ mic_xyz = cat(1, x, y, zeros(1, n_meas));
 
 ES1 = [0.0,0,0];
 ES2 = [0.3,0,0];
-ES3 = [-0.3,0,0];
+ES3 = [0.25,0,0];
 
 ES_xyz = cat(1, ES1, ES2, ES3);
 n_source = 3;
@@ -145,63 +199,13 @@ if samplemethod == 2
     %ptot_fromIR = ptot_fromIR*(sum(1./r1))/(sum(ir, 'all'));
 end
 
-% Simulated Input q_sim
-q_sim = zeros(length(ir),n_source);
-q_sim(20,1) = 1;
-q_sim(22,2) = 0.6;
-q_sim(16,3) = 1.2;
-%q_sim = randn(1e2,1);
-%q_sim = 1;
-
-%Simulated Output y_sim
-n_steps = length(q_sim);
-y_sim_1 = zeros(n_steps,n_meas);
-h_length = length(ir);
-
-% for ii =1:length(q_sim)
-%     for jj = 1:n_source
-%         for kk = 1:n_meas
-%             flippedx = q_sim(ii:-1:max([1 ii-h_length+1]),jj);
-%             lengthflippedx = length(flippedx);
-%             if lengthflippedx < h_length
-%               flippedx = [flippedx;zeros(h_length-lengthflippedx,1)];
-%             end
-%             y_sim_1(ii,kk) = y_sim_1(ii,kk) + sum(flippedx.*ir(:,jj,kk));
-%             
-%         end
-%     end
-% end
-
-for ii =1:length(q_sim)
-    for jj = 1:n_source
-        for kk = 1:n_meas
-            flippedx = ir(ii:-1:max([1 ii-h_length+1]),jj,kk);
-            lengthflippedx = length(flippedx);
-            if lengthflippedx < h_length
-              flippedx = [flippedx;zeros(h_length-lengthflippedx,1)];
-            end
-            y_sim_1(ii,kk) = y_sim_1(ii,kk) + sum(flippedx.*q_sim(:,jj));
-            
-        end
-    end
-end
-
-
-y_sim_2_len = contwo(q_sim, ir);
-y_sim_2 = zeros(length(y_sim_2_len)+500, n_meas);
-
-for i = 1:n_meas
-    for j = 1:n_source
-        y_sim_2(:,i) = y_sim_2(:,i) + sum(contwo(q_sim(:,j), ir(:,j,i)));
-    end
-end
-
 xinput = ir;
 n_steps = length(xinput);
-h_length = 2e2;
-% h_length = length(ir);
+%h_length = 2e2;
+h_length = length(ir);
 h_startestimate = zeros(h_length,n_source);
-youtput = y_sim_1;
+y_step = 120/n_meas;
+youtput = allirslp(:,1:y_step:120);
 convfactor = 0.00114;
 
 [q_est,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_source,n_meas,h_length,convfactor,n_steps);
@@ -219,29 +223,6 @@ semilogy(abs(totalerrorhistory))
 title('errorhist')
 grid
 
- figure(8)
- plot(q_sim(:,1),'k');
- title('q_{sim} vs. q_{est}')
- hold on
- grid
- plot(q_est(:,1),'--')
- legend('q_{sim}', 'q_{est}')
- 
- figure(18)
- plot(q_sim(:,2),'k');
- title('q_{sim} vs. q_{est}')
- hold on
- grid
- plot(q_est(:,2),'--')
- legend('q_{sim}', 'q_{est}')
- 
- figure(28)
- plot(q_sim(:,3),'k');
- title('q_{sim} vs. q_{est}')
- hold on
- grid
- plot(q_est(:,3),'--')
- legend('q_{sim}', 'q_{est}')
 
 y_est_2_len = contwo(q_est, ir);
 y_est_2 = zeros(length(y_est_2_len), n_meas);
@@ -294,11 +275,10 @@ figure(12)
 plot(y_est_2)
 title('y_{est2}')
 %xlim([200 600])
+
+figure(12)
+plot(lowpass(y_est_1*21,7000,48000)+0.2*[0:n_meas-1])
+xlim([200 600])
 figure(13)
-plot(y_sim_1)
-title('y_{sim1}')
-%xlim([200 600])
-figure(14)
-plot(y_sim_2)
-title('y_{sim2}')
-%xlim([200 600])
+plot(youtput + 0.2*[0:n_meas-1])
+xlim([200 600])

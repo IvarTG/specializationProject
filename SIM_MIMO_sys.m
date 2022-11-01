@@ -1,60 +1,6 @@
-indatafolder = 'Meyer4XPmeasurements_data/';
-filenamestart = 'Meyer';
-filenameend = '_S01_R01.etx';
-
-filenumbers = [0:120];
-nfiles = length(filenumbers);
-numberofsampelstoread = 2000;
-
-reloadfiles =0;
-
-nfft = 8192;
-%ivfft = 320:1300;
-ivfft = 320 + [0:479];  % 480 samples = 10 ms
-ivfft = 320 + [0:239];  % 240 samples = 5 ms
-
-plotalsosim = 0;
-
-ivplot = 301:500;
-shiftamplp = 0.2;
-shiftamp = 0.5;
-
-nfirlp = 101;
-freqlpfir = 5000;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-if reloadfiles == 0
-    disp(' ')
-    for ii = 1:nfiles
-        II = int2str(filenumbers(ii));
-        if round(ii/10)*10 == ii
-            disp(['   Loading file: ',II])
-        end
-        if filenumbers(ii) < 10
-            II = ['00',II];
-        elseif filenumbers(ii) < 100
-            II = ['0',II];
-        end
-        filename = [indatafolder,filenamestart,II,filenameend];
-        [ir,fs] = readetxfile(filename,numberofsampelstoread);
-    
-        if ii == 1
-            allirs = zeros(length(ir),nfiles);
-            allirslp = zeros(length(ir),nfiles);
-            Blp = fir1(nfirlp,freqlpfir/(fs/2));
-        end
-        allirs(:,ii) = -ir;
-        irf = contwo(-ir,Blp);
-        irf = irf(floor(nfirlp/2):end);
-        irf = irf(1:length(ir));
-        allirslp(:,ii) = irf;
-    end
-end
-
 clf
 close all
-%clear
+clear
 
 %Discrete IR Code
 %clf

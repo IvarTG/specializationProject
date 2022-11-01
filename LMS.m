@@ -10,7 +10,7 @@ filenumbers = [0:120];
 nfiles = length(filenumbers);
 numberofsampelstoread = 2000;
 
-reloadfiles =0;
+reloadfiles =1;
 
 nfft = 8192;
 %ivfft = 320:1300;
@@ -53,13 +53,6 @@ if reloadfiles == 0
         irf = irf(floor(nfirlp/2):end);
         irf = irf(1:length(ir));
         allirslp(:,ii) = irf;
-
-    %     figure(1)
-    %     clf(1)
-    %     plot(ir)
-    %     grid
-    %     pause
-    
     end
 end
 
@@ -79,7 +72,7 @@ y = r*sin(theta) + yc;
 
 mic_xyz = cat(1, x, y, zeros(1, n_meas));
 
-ES1 = [0,0,0];
+ES1 = [0.1,0,0];
 ES2 = [-0.32,0,0];
 ES3 = [-0.3,0,0];
 
@@ -229,7 +222,7 @@ youtput = allirslp;
 % youtput = [youtput zeros(length(ir)-length(youtput),121)];
 %youtput = cat(1, youtput, zeros(length(ir)-length(youtput),121));
 
-convfactor = 0.01;
+convfactor = 0.001;
 xinput = ir;
 n_steps = length(xinput);
 h_length = 6e2;
