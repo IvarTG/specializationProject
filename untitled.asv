@@ -17,12 +17,12 @@ y = r*sin(theta) + yc;
 
 mic_xyz = cat(1, x, y, zeros(1, n_meas));
 
-ES1 = [0.0,0,0];
+ES1 = [0.3,0,0];
 ES2 = [0.3,0,0];
 ES3 = [-0.3,0,0];
 
 ES_xyz = cat(1, ES1, ES2, ES3);
-n_source = 3;
+n_source = 2;
 
 figure(2)
 scatter(x,y)
@@ -38,7 +38,7 @@ r_ES = EDcalcdist(ES_xyz, mic_xyz.');
 r_ES1 = r_ES(1,:);
 r_ES2 = r_ES(2,:);
 r_ES3 = r_ES(3,:);
-% r_ES = r_ES(1:2,:);
+r_ES = r_ES(1:2,:);
 
 % Discretization error for impulse responses
 
@@ -149,7 +149,6 @@ end
 q_sim = zeros(length(ir),n_source);
 q_sim(20,1) = 1;
 q_sim(22,2) = 0.6;
-q_sim(16,3) = 1.2;
 %q_sim = randn(1e2,1);
 %q_sim = 1;
 
@@ -202,32 +201,24 @@ h_length = 2e2;
 % h_length = length(ir);
 h_startestimate = zeros(h_length,n_source);
 youtput = y_sim_1;
-convfactor = 0.00114;
+convfactor = 0.01;
 
 [q_est,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_source,n_meas,h_length,convfactor,n_steps);
 totalerrorhistory = errorhistory(end,:);
 
-i = 20;
-
-while i > 0
-    [q_est,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_source,n_meas,h_length,convfactor,n_steps,q_est);
-    totalerrorhistory = [totalerrorhistory; errorhistory(end,:)];
-    i = i-1;
-end
+% i = 10;
+% 
+% while i > 0
+%     [q_est,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_source,n_meas,h_length,convfactor,n_steps,q_est);
+%     totalerrorhistory = [totalerrorhistory; errorhistory(end,:)];
+%     i = i-1;
+% end
 figure(7)
 semilogy(abs(totalerrorhistory))
 title('errorhist')
 grid
 
  figure(8)
- plot(q_sim(:,1),'k');
- title('q_{sim} vs. q_{est}')
- hold on
- grid
- plot(q_est(:,1),'--')
- legend('q_{sim}', 'q_{est}')
- 
- figure(18)
  plot(q_sim(:,2),'k');
  title('q_{sim} vs. q_{est}')
  hold on
@@ -235,12 +226,12 @@ grid
  plot(q_est(:,2),'--')
  legend('q_{sim}', 'q_{est}')
  
- figure(28)
- plot(q_sim(:,3),'k');
+ figure(18)
+ plot(q_sim(:,1),'k');
  title('q_{sim} vs. q_{est}')
  hold on
  grid
- plot(q_est(:,3),'--')
+ plot(q_est(:,1),'--')
  legend('q_{sim}', 'q_{est}')
 
 y_est_2_len = contwo(q_est, ir);
