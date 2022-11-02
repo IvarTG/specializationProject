@@ -44,7 +44,7 @@ nsig = length(xinput);
 errorhistory = zeros(nsig,n_meas);
 
 
-for ii =1:n_steps
+for ii =200:n_steps
 %     y_hat = zeros(1,n_sources,n_measurements);
     %e = zeros(1, n_measurements);
     e = youtput(ii,:);

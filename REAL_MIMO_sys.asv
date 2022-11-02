@@ -72,8 +72,8 @@ y = r*sin(theta) + yc;
 mic_xyz = cat(1, x, y, zeros(1, n_meas));
 
 ES1 = [0.0,0,0];
-ES2 = [0.3,0,0];
-ES3 = [0.25,0,0];
+ES2 = [-0.3,0,0];
+ES3 = [-0.25,0,0];
 
 ES_xyz = cat(1, ES1, ES2, ES3);
 n_source = 3;
@@ -138,7 +138,7 @@ for i = 1:n_source
 end
 irmaxlength = irmaxlength+1;
 
-ir = zeros(irmaxlength+500, n_source, n_meas);
+ir = zeros(irmaxlength+2000, n_source, n_meas);
 nfft = 8192;
 F = zeros(nfft,n_source, n_meas);
 
@@ -150,7 +150,7 @@ if samplemethod == 1
         end
     end
 elseif samplemethod == 2
-    c = zeros(ceil((irmaxlength+500)/noversamp), n_source, n_meas);
+    c = zeros(ceil((irmaxlength+2000)/noversamp), n_source, n_meas);
     for i = 1:n_source
         for j = 1:n_meas
             frac = n_exact(i,j) - floor(n_exact(i,j));
@@ -204,20 +204,20 @@ n_steps = length(xinput);
 %h_length = 2e2;
 h_length = length(ir);
 h_startestimate = zeros(h_length,n_source);
-y_step = 120/
-youtput = allirs(:,1:5:120);
+y_step = 120/n_meas;
+youtput = allirslp(:,1:y_step:120);
 convfactor = 0.00114;
 
 [q_est,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_source,n_meas,h_length,convfactor,n_steps);
 totalerrorhistory = errorhistory(end,:);
 
-% i = 20;
-% 
-% while i > 0
-%     [q_est,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_source,n_meas,h_length,convfactor,n_steps,q_est);
-%     totalerrorhistory = [totalerrorhistory; errorhistory(end,:)];
-%     i = i-1;
-% end
+i = 3;
+
+while i > 0
+    [q_est,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_source,n_meas,h_length,convfactor,n_steps,q_est);
+    totalerrorhistory = [totalerrorhistory; errorhistory(end,:)];
+    i = i-1;
+end
 figure(7)
 semilogy(abs(totalerrorhistory))
 title('errorhist')
@@ -277,7 +277,7 @@ title('y_{est2}')
 %xlim([200 600])
 
 figure(12)
-plot(lowpass(y_est_1*21,7000,48000)+0.2*[0:n_meas-1])
+plot(lowpass(y_est_1*21,7000,48000)+1.4*[0:n_meas-1])
 xlim([200 600])
 figure(13)
 plot(youtput + 0.2*[0:n_meas-1])

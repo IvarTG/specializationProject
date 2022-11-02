@@ -74,8 +74,9 @@ mic_xyz = cat(1, x, y, zeros(1, n_meas));
 ES1 = [0.0,0,0];
 ES2 = [0.3,0,0];
 ES3 = [0.25,0,0];
+ES4 = [0.2,0,0];
 
-ES_xyz = cat(1, ES1, ES2, ES3);
+ES_xyz = cat(1, ES1, ES2, ES3, ES4);
 n_source = 3;
 
 figure(2)
@@ -92,7 +93,7 @@ r_ES = EDcalcdist(ES_xyz, mic_xyz.');
 r_ES1 = r_ES(1,:);
 r_ES2 = r_ES(2,:);
 r_ES3 = r_ES(3,:);
-% r_ES = r_ES(1:2,:);
+r_ES = r_ES(1:3,:);
 
 % Discretization error for impulse responses
 
@@ -205,8 +206,11 @@ n_steps = length(xinput);
 h_length = length(ir);
 h_startestimate = zeros(h_length,n_source);
 y_step = 120/n_meas;
+% youtput = cat(1, allirs(:,1:y_step:120), zeros(3000,n_meas));
 youtput = allirslp(:,1:y_step:120);
+convfactor = 0.0095; %Best so far for i=0 youtput = allirslp
 convfactor = 0.00114;
+
 
 [q_est,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_source,n_meas,h_length,convfactor,n_steps);
 totalerrorhistory = errorhistory(end,:);
@@ -224,13 +228,13 @@ title('errorhist')
 grid
 
 
-y_est_2_len = contwo(q_est, ir);
-y_est_2 = zeros(length(y_est_2_len), n_meas);
-for i = 1:n_meas
-    for j = 1:n_source
-        y_est_2(:,i) = y_est_2(:,i) + contwo(q_est(:,j), ir(:,j,i));
-    end
-end
+% y_est_2_len = contwo(q_est, ir);
+% y_est_2 = zeros(length(y_est_2_len), n_meas);
+% for i = 1:n_meas
+%     for j = 1:n_source
+%         y_est_2(:,i) = y_est_2(:,i) + contwo(q_est(:,j), ir(:,j,i));
+%     end
+% end
 
 y_est_1 = zeros(length(youtput), n_meas);
 for ii =1:n_steps
@@ -256,11 +260,11 @@ frest = frest(1:nfft/2);
 
 figure(9)
 % plot(lowpass(y_est_1(:,1),7000,48000))
-plot(y_est_1(:,20),'-k')
+plot(y_est_1(:,1),'-k')
 xlim([200 800])
 hold on
 title('y_{est} vs y_{real}')
-plot(youtput(:,20),'--')
+plot(youtput(:,1),'--')
 legend('y_{est}','y_{real}')
 
 figure(10)
@@ -271,14 +275,28 @@ grid
 figure(11)
 plot(y_est_1)
 title('y_{est1}')
-figure(12)
-plot(y_est_2)
-title('y_{est2}')
-%xlim([200 600])
+% figure(12)
+% plot(y_est_2)
+% title('y_{est2}')
+% xlim([200 600])
 
 figure(12)
-plot(lowpass(y_est_1*21,7000,48000)+0.2*[0:n_meas-1])
+plot(y_est_1+0.2*[0:n_meas-1])
 xlim([200 600])
 figure(13)
 plot(youtput + 0.2*[0:n_meas-1])
 xlim([200 600])
+
+figure(14)
+subplot(4,1,1)
+plot(q_est(:,1))
+title('q_{est1}')
+subplot(4,1,2)
+plot(q_est(:,2))
+title('q_{est2}')
+subplot(4,1,3)
+plot(q_est(:,3))
+title('q_{est3}')
+subplot(4,1,4)
+plot(q_est(:,4))
+title('q_{est4}')
