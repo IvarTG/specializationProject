@@ -112,9 +112,9 @@ end
 % %                 ir(i,j,:) = c;
 % end
 
-% figure(3)
-% plot(ir(1,1))
-% pause
+figure(3)
+plot(ir)
+
 
 fvec_fft = fs/nfft*[0:nfft/2-1].';
 

@@ -62,7 +62,7 @@ r = 2.35; %m
 xc = 0;   %center x
 yc = 0;   %center y
 
-n_meas = 120;
+n_meas = 24;
 
 theta = linspace(0,2*pi-((3*pi)/180),n_meas); %if n_meas is 120
 %theta = linspace(0,2*pi,n_meas);                %if n_meas is 121
@@ -72,12 +72,17 @@ y = r*sin(theta) + yc;
 mic_xyz = cat(1, x, y, zeros(1, n_meas));
 
 ES1 = [0.0,0,0];
-ES2 = [0.3,0,0];
+ES2 = [0.03,0,0];
 ES3 = [0.25,0,0];
-ES4 = [0.2,0,0];
+% ES1 = [0.05,-0.05,0];
+% ES2 = [0.07,0.1,0];
+% ES3 = [0.07,-0.1,0];
+ES4 = [0.07,0,0];
+ES5 = [0.12,0,0];
 
-ES_xyz = cat(1, ES1, ES2, ES3, ES4);
-n_source = 3;
+
+ES_xyz = cat(1, ES1, ES2, ES3, ES4, ES5);
+n_source = 5;
 
 figure(2)
 scatter(x,y)
@@ -85,6 +90,8 @@ hold on
 plot(ES1(1),ES1(2), 'x', 'LineWidth', 2, 'MarkerSize', 9);
 plot(ES2(1),ES2(2), 'x', 'LineWidth', 2, 'MarkerSize', 9);
 plot(ES3(1),ES3(2), 'x', 'LineWidth', 2, 'MarkerSize', 9);
+plot(ES4(1),ES4(2), 'x', 'LineWidth', 2, 'MarkerSize', 9);
+plot(ES5(1),ES5(2), 'x', 'LineWidth', 2, 'MarkerSize', 9);
 grid
 axis equal
 hold off
@@ -93,7 +100,7 @@ r_ES = EDcalcdist(ES_xyz, mic_xyz.');
 r_ES1 = r_ES(1,:);
 r_ES2 = r_ES(2,:);
 r_ES3 = r_ES(3,:);
-r_ES = r_ES(1:3,:);
+r_ES = r_ES(1:5,:);
 
 % Discretization error for impulse responses
 
@@ -139,7 +146,7 @@ for i = 1:n_source
 end
 irmaxlength = irmaxlength+1;
 
-ir = zeros(irmaxlength+500, n_source, n_meas);
+ir = zeros(irmaxlength+2500, n_source, n_meas);
 nfft = 8192;
 F = zeros(nfft,n_source, n_meas);
 
@@ -151,7 +158,7 @@ if samplemethod == 1
         end
     end
 elseif samplemethod == 2
-    c = zeros(ceil((irmaxlength+500)/noversamp), n_source, n_meas);
+    c = zeros(ceil((irmaxlength+2500)/noversamp), n_source, n_meas);
     for i = 1:n_source
         for j = 1:n_meas
             frac = n_exact(i,j) - floor(n_exact(i,j));
@@ -208,14 +215,18 @@ h_startestimate = zeros(h_length,n_source);
 y_step = 120/n_meas;
 % youtput = cat(1, allirs(:,1:y_step:120), zeros(3000,n_meas));
 youtput = allirslp(:,1:y_step:120);
-convfactor = 0.0095; %Best so far for i=0 youtput = allirslp
-convfactor = 0.00114;
-
+w1 = window(@hamming,135);
+% test2 = zeros(length(youtput),n_meas);
+% test2(290:424,:) = youtput(290:424,:).*w1;
+% youtput = test2;
+% convfactor = 0.00009;
+convfactor = 0.0001;
+%convfactor = 0.00234;
 
 [q_est,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_source,n_meas,h_length,convfactor,n_steps);
 totalerrorhistory = errorhistory(end,:);
 
-i = 20;
+i = 22;
 
 while i > 0
     [q_est,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_source,n_meas,h_length,convfactor,n_steps,q_est);
@@ -228,13 +239,13 @@ title('errorhist')
 grid
 
 
-% y_est_2_len = contwo(q_est, ir);
-% y_est_2 = zeros(length(y_est_2_len), n_meas);
-% for i = 1:n_meas
-%     for j = 1:n_source
-%         y_est_2(:,i) = y_est_2(:,i) + contwo(q_est(:,j), ir(:,j,i));
-%     end
-% end
+y_est_2_len = contwo(q_est, ir);
+y_est_2 = zeros(length(y_est_2_len), n_meas);
+for i = 1:n_meas
+    for j = 1:n_source
+        y_est_2(:,i) = y_est_2(:,i) + contwo(q_est(:,j), ir(:,j,i));
+    end
+end
 
 y_est_1 = zeros(length(youtput), n_meas);
 for ii =1:n_steps
@@ -251,6 +262,21 @@ for ii =1:n_steps
         end
     end
 end
+
+% for ii =1:length(q_est)
+%     for jj = 1:n_source
+%         for kk = 1:n_meas
+%             flippedx = q_est(ii:-1:max([1 ii-h_length+1]),jj);
+%             lengthflippedx = length(flippedx);
+%             if lengthflippedx < h_length
+%               flippedx = [flippedx;zeros(h_length-lengthflippedx,1)];
+%             end
+%             y_est_1(ii,kk) = y_est_1(ii,kk) + sum(flippedx.*ir(:,jj,kk));
+%             
+%         end
+%     end
+% end
+
 nfft = 4096;
 fvec = fs/nfft*[0:nfft/2-1];
 froutput = fft(youtput(:,1),nfft); 
@@ -263,9 +289,11 @@ figure(9)
 plot(y_est_1(:,1),'-k')
 xlim([200 800])
 hold on
+plot(y_est_2(:,1),'*')
+xlim([200 800])
 title('y_{est} vs y_{real}')
 plot(youtput(:,1),'--')
-legend('y_{est}','y_{real}')
+legend('y_{est1}','y_{est1}','y_{real}')
 
 figure(10)
 semilogx(fvec,20*log10(abs(froutput)),fvec,20*log10(abs(frest)),'o' )
@@ -275,10 +303,10 @@ grid
 figure(11)
 plot(y_est_1)
 title('y_{est1}')
-% figure(12)
-% plot(y_est_2)
-% title('y_{est2}')
-% xlim([200 600])
+figure(19)
+plot(y_est_2)
+title('y_{est2}')
+xlim([200 600])
 
 figure(12)
 plot(y_est_1+0.2*[0:n_meas-1])
@@ -294,9 +322,9 @@ title('q_{est1}')
 subplot(4,1,2)
 plot(q_est(:,2))
 title('q_{est2}')
-subplot(4,1,3)
-plot(q_est(:,3))
-title('q_{est3}')
-subplot(4,1,4)
-plot(q_est(:,4))
-title('q_{est4}')
+% subplot(4,1,3)
+% plot(q_est(:,3))
+% title('q_{est3}')
+% subplot(4,1,4)
+% plot(q_est(:,4))
+% title('q_{est4}')

@@ -202,12 +202,13 @@ h_length = 2e2;
 % h_length = length(ir);
 h_startestimate = zeros(h_length,n_source);
 youtput = y_sim_1;
+%youtput = youtput + 0.001*randn(size(youtput));
 convfactor = 0.00114;
 
 [q_est,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_source,n_meas,h_length,convfactor,n_steps);
 totalerrorhistory = errorhistory(end,:);
 
-i = 20;
+i = 60;
 
 while i > 0
     [q_est,errorhistory] = MC_LMS_Ncoeffs(xinput,youtput,n_source,n_meas,h_length,convfactor,n_steps,q_est);
