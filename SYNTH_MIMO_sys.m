@@ -139,15 +139,15 @@ grid
  plot(q_ES(:,3),'--')
  legend('q_{sim}', 'q_{est}')
 
-y_est_2_len = contwo(q_ES, ir_ES);
-y_est_2 = zeros(length(y_est_2_len), n_meas);
-for i = 1:n_meas
-    for j = 1:n_source_OS
-        y_est_2(:,i) = y_est_2(:,i) + contwo(q_ES(:,j), ir_ES(:,j,i));
-    end
-end
+% y_est_2_len = contwo(q_ES, ir_ES);
+% y_est_2 = zeros(length(y_est_2_len), n_meas);
+% for i = 1:n_meas
+%     for j = 1:n_source_OS
+%         y_est_2(:,i) = y_est_2(:,i) + contwo(q_ES(:,j), ir_ES(:,j,i));
+%     end
+% end
 
-y_est_1 = zeros(length(youtput), n_meas);
+y_ES = zeros(length(youtput), n_meas);
 for ii =1:n_steps
     for kk = 1:n_meas
         for jj = 1:n_source_ES
@@ -157,7 +157,7 @@ for ii =1:n_steps
             if lengthflippedx < h_length
               flippedx = [flippedx;zeros(h_length-lengthflippedx,1)];
             end
-            y_est_1(ii,kk) = y_est_1(ii,kk) + sum(flippedx.*q_ES(:,jj));
+            y_ES(ii,kk) = y_ES(ii,kk) + sum(flippedx.*q_ES(:,jj));
             
         end
     end
@@ -166,12 +166,12 @@ nfft = 4096;
 fvec = fs/nfft*[0:nfft/2-1];
 froutput = fft(youtput(:,1),nfft); 
 froutput = froutput(1:nfft/2);
-frest = fft(y_est_1(:,1),nfft); 
+frest = fft(y_ES(:,1),nfft); 
 frest = frest(1:nfft/2);
 
 figure(9)
 % plot(lowpass(y_est_1(:,1),7000,48000))
-plot(y_est_1(:,20),'-k')
+plot(y_ES(:,20),'-k')
 xlim([200 800])
 hold on
 title('y_{est} vs y_{real}')
@@ -184,15 +184,15 @@ legend('froutput','frest')
 grid
 
 figure(11)
-plot(y_est_1)
-title('y_{est1}')
-figure(12)
-plot(y_est_2)
-title('y_{est2}')
-%xlim([200 600])
+plot(y_ES)
+title('y_{ES}')
+% figure(12)
+% plot(y_est_2)
+% title('y_{est2}')
+% %xlim([200 600])
 figure(13)
 plot(y_OS)
-title('y_{sim1}')
+title('y_{OS}')
 %xlim([200 600])
 % figure(14)
 % plot(y_sim_2)
